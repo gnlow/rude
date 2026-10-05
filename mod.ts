@@ -13,6 +13,16 @@ export class Observable<T> {
             this.subscribe(value => observer(f(value)))
         })
     }
+    scan<O>(acc: (prev: O, curr: T) => O, seed: O) {
+        return new Observable<O>(observer => {
+            observer(seed)
+            let curr = seed
+            this.subscribe(value => {
+                curr = acc(curr, value)
+                observer(curr)
+            })
+        })
+    }
 }
 
 export class Subject<T> extends Observable<T> {
