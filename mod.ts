@@ -58,7 +58,7 @@ export class Observable<T> {
     }
     static merge<Ts extends unknown[]>
     (...obs: { [K in keyof Ts]: Observable<Ts[K]> }) {
-        return new Observable(o => {
+        return new Observable<Ts[number]>(o => {
             const subs = obs.map(ob => ob.subscribe(o))
             
             return () => {
