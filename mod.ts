@@ -42,13 +42,48 @@ export class Observable<T> {
         })
     }
 
-    static merge<Ts extends unknown[]>(...obs: { [K in keyof Ts]: Observable<Ts[K]> }) {
+    static of<T>(...values: T[]) {
+        return new Observable(o => {
+            values.forEach(v => {
+                o(v)
+            })
+            return () => {}
+        })
+    }
+    static from<T>(vOrOb: T | Observable<T>) {
+        if (vOrOb instanceof Observable) {
+            return vOrOb
+        }
+        return Observable.of(vOrOb)
+    }
+    static merge<Ts extends unknown[]>
+    (...obs: { [K in keyof Ts]: Observable<Ts[K]> }) {
         return new Observable(o => {
             const subs = obs.map(ob => ob.subscribe(o))
+            
             return () => {
                 subs.forEach(sub => sub())
             }
         })
+    }
+    static combineLatest<Ts extends unknown[]>
+    (vOrObs: { [K in keyof Ts]: Ts[K] | Observable<Ts[K]> }) {
+        const YET = Symbol()
+        
+        return new Observable(o => {
+            const obs = vOrObs.map(Observable.from)
+            const state = obs.map(() => YET) as { [K in keyof Ts]: Ts[K] | typeof YET }
+            const subs = obs.map((ob, i) => ob.subscribe(v => {
+                state[i] = v
+                if (!state.includes(YET)) {
+                    o([...state])
+                }
+            }))
+            
+            return () => {
+                subs.forEach(sub => sub())
+            }
+        }) 
     }
 }
 

@@ -16,3 +16,8 @@ const unsub = Observable.merge(
 ob2.next("hi")
 
 unsub()
+
+Observable.combineLatest([
+    Observable.of(1, 2),
+    Observable.of(3, 4),
+]).subscribe(console.log)
