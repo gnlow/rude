@@ -13,13 +13,25 @@ export class Observable<T> {
             this.subscribe(value => observer(f(value)))
         })
     }
-    scan<O>(acc: (prev: O, curr: T) => O, seed: O) {
+    scan(acc: (prev: T, curr: T, i: number) => T): Observable<T>
+    scan<O>(acc: (prev: O, curr: T, i: number) => O, seed: O): Observable<O>
+    scan<O>(acc: (prev: O, curr: T, i: number) => O, seed?: O){
         return new Observable<O>(observer => {
-            observer(seed)
-            let curr = seed
+            let hasSeed = seed != undefined
+            let prev: O
+            if (hasSeed) {
+                prev = seed!
+                observer(seed!)
+            }
+            let index = 0
             this.subscribe(value => {
-                curr = acc(curr, value)
-                observer(curr)
+                if (hasSeed) {
+                    prev = acc(prev!, value, index++)
+                } else {
+                    prev = value as T & O
+                    hasSeed = true
+                }
+                observer(prev)
             })
         })
     }
