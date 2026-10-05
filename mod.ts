@@ -70,13 +70,13 @@ export class Observable<T> {
     (vOrObs: { [K in keyof Ts]: Ts[K] | Observable<Ts[K]> }) {
         const YET = Symbol()
         
-        return new Observable(o => {
+        return new Observable<Ts>(o => {
             const obs = vOrObs.map(Observable.from)
             const state = obs.map(() => YET) as { [K in keyof Ts]: Ts[K] | typeof YET }
             const subs = obs.map((ob, i) => ob.subscribe(v => {
                 state[i] = v
                 if (!state.includes(YET)) {
-                    o([...state])
+                    o([...state] as Ts)
                 }
             }))
             
