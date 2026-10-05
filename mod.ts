@@ -1,16 +1,22 @@
 export type Observer<T> = (value: T) => void
+export type Teardown = () => void
 
 export class Observable<T> {
     constructor(
-        public onSubscribe: (observer: Observer<T>) => void,
+        public onSubscribe: (observer: Observer<T>) => Teardown,
     ) {}
     subscribe(observer: Observer<T>) {
-        this.onSubscribe(observer)
+        let isUnsubscribed = false
+        return this.onSubscribe(value => {
+            if (!isUnsubscribed) {
+                observer(value)
+            }
+        })
     }
 
     map<O>(f: (value: T) => O) {
         return new Observable<O>(observer => {
-            this.subscribe(value => observer(f(value)))
+            return this.subscribe(value => observer(f(value)))
         })
     }
     scan(acc: (prev: T, curr: T, i: number) => T): Observable<T>
@@ -24,7 +30,7 @@ export class Observable<T> {
                 observer(seed!)
             }
             let index = 0
-            this.subscribe(value => {
+            return this.subscribe(value => {
                 if (hasSeed) {
                     prev = acc(prev!, value, index++)
                 } else {
@@ -40,7 +46,12 @@ export class Observable<T> {
 export class Subject<T> extends Observable<T> {
     observers = new Set<Observer<T>>
     constructor() {
-        super(observer => { this.observers.add(observer) })
+        super(observer => {
+            this.observers.add(observer)
+            return () => {
+                this.observers.delete(observer)
+            }
+        })
     }
     next(value: T) {
         this.observers.forEach(observer => observer(value))
